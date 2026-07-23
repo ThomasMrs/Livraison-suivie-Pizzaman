@@ -25,24 +25,31 @@ seule (façon Uber Eats). Aucune application à installer.
 1. **Le livreur** ouvre `livreur.html`, renseigne le nom du client, son téléphone
    et l'**adresse de livraison (obligatoire)**, puis appuie sur « Je pars ». Le
    téléphone demande l'autorisation de partager la position ; il faut l'accepter.
-2. Le livreur suit alors sa propre position sur une **carte intégrée** et prévient
-   le client **en un clic** via le bouton « Prévenir le client (SMS) » (WhatsApp
-   et copie du lien restent disponibles). Le message contient la durée estimée, un
-   **lien de suivi en direct** et un lien Google Maps.
+   Le livreur **ne saisit aucune durée** : le temps d'arrivée est calculé
+   automatiquement (l'adresse est convertie en coordonnées, puis l'itinéraire
+   routier livreur → adresse donne l'estimation).
+2. Le livreur suit alors sa propre position et le trajet sur une **carte intégrée**
+   et prévient le client **en un clic** via le bouton « Prévenir le client (SMS) »
+   (WhatsApp et copie du lien restent disponibles). Le message contient l'estimation
+   calculée, un **lien de suivi en direct** et un lien Google Maps.
 3. **Le client** ouvre le lien reçu (`suivi.html?id=...`) et voit le livreur se
-   déplacer sur la carte. S'il active sa position, l'heure d'arrivée est recalculée
-   en continu selon l'itinéraire routier réel livreur → client.
+   déplacer sur la carte, avec l'heure d'arrivée qui se recalcule en continu. S'il
+   active sa position, l'estimation se fait vers son emplacement exact ; sinon elle
+   se fait vers l'adresse de livraison.
 4. À l'arrivée, le livreur appuie sur « Je suis arrivé » (ou « Annuler »).
 
 La position se rafraîchit via Supabase Realtime, avec un rafraîchissement
-périodique (toutes les 5 s) en filet de sécurité. La carte utilise Leaflet +
-OpenStreetMap et le routage OSRM (gratuits, sans clé d'API).
+périodique (toutes les 5 s) en filet de sécurité. La carte utilise Leaflet, le
+fond CARTO Voyager, le routage OSRM et le géocodage Nominatim (tous gratuits et
+sans clé d'API).
 
 ## Configuration Supabase (à faire une fois)
 
 1. Dans le tableau de bord Supabase, ouvrir `SQL Editor`, coller le contenu de
    `sql/supabase-setup.sql` et cliquer sur `Run`. Cela crée la table `deliveries`,
-   active la sécurité (RLS) et le temps réel.
+   active la sécurité (RLS) et le temps réel. **Le script est ré-exécutable** : si
+   la table existait déjà, il ajoute les colonnes manquantes (`dest_lat`,
+   `dest_lng`). Re-lancez-le après cette mise à jour.
 2. Vérifier que l'URL et la clé publique dans `js/tracking.js` correspondent au
    projet (`Settings` -> `API` -> `Project URL` et `anon`/`publishable key`).
 
@@ -53,19 +60,19 @@ OpenStreetMap et le routage OSRM (gratuits, sans clé d'API).
 > Ce site partage la même base Supabase que le site de commande principal : une
 > seule exécution du script SQL suffit pour les deux.
 
-## Estimation d'arrivée dynamique
+## Estimation d'arrivée automatique
 
-Sur la page de suivi, le client peut **activer sa position**. L'estimation est
-alors recalculée en continu :
+Personne ne saisit de durée. L'estimation est calculée par GPS et se met à jour
+toute seule :
 
-- itinéraire routier réel entre le livreur et le client via OSRM
-  (`router.project-osrm.org`) ;
-- tracé de la route affiché sur la carte + distance restante ;
-- recalcul à chaque déplacement du livreur (limité à 1 fois / 8 s).
+- l'adresse de livraison est géocodée en coordonnées (Nominatim) ;
+- l'itinéraire routier livreur → destination (OSRM) donne le temps et le tracé ;
+- le calcul se refait à chaque déplacement du livreur (limité à 1 fois / 8–12 s).
 
-Si le routage échoue, une estimation « à vol d'oiseau » prend le relais. Si le
-client refuse la géolocalisation, l'estimation retombe sur la durée fixe saisie
-par le livreur. La position du client n'est **pas enregistrée** : le calcul reste
+Côté client, la destination est **sa position exacte** s'il active sa
+géolocalisation, sinon **l'adresse de livraison**. Dans les deux cas l'estimation
+s'actualise en direct. Si le routage échoue, une estimation « à vol d'oiseau »
+prend le relais. La position du client n'est **pas enregistrée** : ce calcul reste
 dans son navigateur.
 
 ## Ajouter à l'écran d'accueil (icône du raccourci)

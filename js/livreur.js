@@ -17,14 +17,22 @@
   const cancelButton = document.querySelector("#cancel-button");
   const driverMapEl = document.querySelector("#driver-map");
 
+  const ROUTE_THROTTLE_MS = 12000;
+
   const state = {
     deliveryId: null,
     phone: "",
     watchId: null,
     lastPushAt: 0,
     lastCoords: null,
+    destCoords: null,
     map: null,
     driverMarker: null,
+    destMarker: null,
+    routeCasing: null,
+    routeLine: null,
+    lastRouteAt: 0,
+    fittedRoute: false,
   };
 
   function refreshIcons() {
@@ -47,9 +55,10 @@
     const p = PizzaTracking.PIZZERIA;
     const center = lat != null && lng != null ? [lat, lng] : [p.lat, p.lng];
     state.map = window.L.map(driverMapEl, { zoomControl: true }).setView(center, 15);
-    window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap",
+    window.L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      subdomains: "abcd",
+      maxZoom: 20,
+      attribution: "&copy; OpenStreetMap &copy; CARTO",
     }).addTo(state.map);
     window.L.marker([p.lat, p.lng], { icon: emojiIcon("🍕", "is-pizzeria") })
       .addTo(state.map)
@@ -57,6 +66,51 @@
     window.setTimeout(() => {
       if (state.map) state.map.invalidateSize();
     }, 200);
+  }
+
+  function setDestMarker(pos) {
+    if (!state.map || !pos) return;
+    const latlng = [pos.lat, pos.lng];
+    if (!state.destMarker) {
+      state.destMarker = window.L.marker(latlng, { icon: emojiIcon("🏠", "is-dest") })
+        .addTo(state.map)
+        .bindPopup("Client");
+    } else {
+      state.destMarker.setLatLng(latlng);
+    }
+  }
+
+  function drawRoute(coords) {
+    if (!state.map || !coords || coords.length < 2) return;
+    if (!state.routeCasing) {
+      state.routeCasing = window.L.polyline(coords, {
+        color: "#ffffff",
+        weight: 9,
+        opacity: 0.9,
+        lineCap: "round",
+        lineJoin: "round",
+      }).addTo(state.map);
+      state.routeLine = window.L.polyline(coords, {
+        color: "#0e5b3f",
+        weight: 5,
+        opacity: 0.95,
+        lineCap: "round",
+        lineJoin: "round",
+      }).addTo(state.map);
+    } else {
+      state.routeCasing.setLatLngs(coords);
+      state.routeLine.setLatLngs(coords);
+    }
+    if (!state.fittedRoute && state.destCoords && state.lastCoords) {
+      state.map.fitBounds(
+        window.L.latLngBounds([
+          [state.lastCoords.lat, state.lastCoords.lng],
+          [state.destCoords.lat, state.destCoords.lng],
+        ]),
+        { padding: [50, 50], maxZoom: 16 },
+      );
+      state.fittedRoute = true;
+    }
   }
 
   function updateDriverMarker(lat, lng) {
@@ -72,7 +126,36 @@
     } else {
       state.driverMarker.setLatLng(latlng);
     }
-    state.map.panTo(latlng, { animate: true });
+    if (!state.destCoords) state.map.panTo(latlng, { animate: true });
+  }
+
+  // Calcule le temps livreur -> client et met à jour l'estimation + le tracé.
+  async function computeEta(from, to) {
+    try {
+      const r = await PizzaTracking.fetchRoute(from, to);
+      return { minutes: Math.max(1, Math.round(r.durationSec / 60)), coords: r.coords };
+    } catch (error) {
+      const meters = PizzaTracking.haversineMeters(from, to) * 1.3;
+      return {
+        minutes: Math.max(1, Math.round(meters / 6.5 / 60)),
+        coords: [
+          [from.lat, from.lng],
+          [to.lat, to.lng],
+        ],
+      };
+    }
+  }
+
+  function maybeUpdateRoute(lat, lng, force) {
+    if (!state.destCoords) return;
+    const now = Date.now();
+    if (!force && now - state.lastRouteAt < ROUTE_THROTTLE_MS) return;
+    state.lastRouteAt = now;
+    computeEta({ lat, lng }, state.destCoords).then((res) => {
+      state.etaMinutes = res.minutes;
+      drawRoute(res.coords);
+      updateMessageLinks();
+    });
   }
 
   function setFeedback(message, isError) {
@@ -91,11 +174,11 @@
 
   function buildMessage(clientName, etaMinutes, url, coords) {
     const greeting = clientName ? `Bonjour ${clientName}, ` : "Bonjour, ";
-    const lines = [
-      `${greeting}votre commande Pizza'Man part de la pizzeria ! 🍕🛵`,
-      `J'arrive dans environ ${etaMinutes} min.`,
-      `Suivi en direct : ${url}`,
-    ];
+    const lines = [`${greeting}votre commande Pizza'Man part de la pizzeria ! 🍕🛵`];
+    if (etaMinutes) {
+      lines.push(`J'arrive dans environ ${etaMinutes} min.`);
+    }
+    lines.push(`Suivi en direct : ${url}`);
     if (coords) {
       lines.push(`Google Maps : ${PizzaTracking.googleMapsUrl(coords.lat, coords.lng)}`);
     }
@@ -150,6 +233,7 @@
         const { latitude, longitude } = position.coords;
         pushPosition(latitude, longitude, false);
         updateDriverMarker(latitude, longitude);
+        maybeUpdateRoute(latitude, longitude, false);
         updateMessageLinks();
       },
       (error) => {
@@ -200,6 +284,7 @@
           clientName: state.clientName,
           phone: state.phone,
           etaMinutes: state.etaMinutes,
+          destCoords: state.destCoords,
         }),
       );
     } catch (error) {
@@ -224,7 +309,7 @@
     const data = new FormData(form);
     state.clientName = String(data.get("clientName") || "").trim();
     state.phone = PizzaTracking.normalizePhone(data.get("clientPhone"));
-    state.etaMinutes = Number(data.get("etaMinutes")) || 10;
+    state.etaMinutes = null;
     const destination = String(data.get("destination") || "").trim();
 
     startButton.disabled = true;
@@ -244,6 +329,21 @@
       return;
     }
 
+    // Géocode l'adresse et calcule le temps d'arrivée automatiquement.
+    setFeedback("Calcul de l'itinéraire vers l'adresse…");
+    let routeCoords = null;
+    try {
+      state.destCoords = await PizzaTracking.geocodeAddress(destination);
+      if (state.destCoords) {
+        const eta = await computeEta(coords, state.destCoords);
+        state.etaMinutes = eta.minutes;
+        routeCoords = eta.coords;
+      }
+    } catch (error) {
+      console.error(error);
+      state.destCoords = null;
+    }
+
     setFeedback("Création du suivi…");
     try {
       const delivery = await PizzaTracking.createDelivery({
@@ -253,10 +353,13 @@
         etaMinutes: state.etaMinutes,
         lat: coords.lat,
         lng: coords.lng,
+        destLat: state.destCoords ? state.destCoords.lat : null,
+        destLng: state.destCoords ? state.destCoords.lng : null,
       });
       state.deliveryId = delivery.id;
       state.lastCoords = coords;
       state.lastPushAt = Date.now();
+      state.lastRouteAt = Date.now();
     } catch (error) {
       console.error(error);
       startButton.disabled = false;
@@ -269,7 +372,17 @@
     showLivePanel();
     initDriverMap(coords.lat, coords.lng);
     updateDriverMarker(coords.lat, coords.lng);
-    setPositionStatus("Position partagée ✅");
+    if (state.destCoords) {
+      setDestMarker(state.destCoords);
+      if (routeCoords) drawRoute(routeCoords);
+      setPositionStatus(
+        state.etaMinutes
+          ? `Position partagée ✅ · arrivée estimée ~${state.etaMinutes} min`
+          : "Position partagée ✅",
+      );
+    } else {
+      setPositionStatus("Position partagée ✅ (adresse non localisée, estimation via le client)");
+    }
     updateMessageLinks();
     startWatching();
   }
@@ -298,15 +411,24 @@
     state.deliveryId = delivery.id;
     state.clientName = saved.clientName || delivery.client_name || "";
     state.phone = saved.phone || "";
-    state.etaMinutes = saved.etaMinutes || delivery.eta_minutes || 10;
+    state.etaMinutes = saved.etaMinutes || delivery.eta_minutes || null;
     if (delivery.driver_lat != null && delivery.driver_lng != null) {
       state.lastCoords = { lat: delivery.driver_lat, lng: delivery.driver_lng };
+    }
+    if (delivery.dest_lat != null && delivery.dest_lng != null) {
+      state.destCoords = { lat: delivery.dest_lat, lng: delivery.dest_lng };
+    } else if (saved.destCoords) {
+      state.destCoords = saved.destCoords;
     }
 
     showLivePanel();
     const c = state.lastCoords;
     initDriverMap(c ? c.lat : null, c ? c.lng : null);
     if (c) updateDriverMarker(c.lat, c.lng);
+    if (state.destCoords) {
+      setDestMarker(state.destCoords);
+      if (c) maybeUpdateRoute(c.lat, c.lng, true);
+    }
     setPositionStatus("Reprise de la livraison en cours…");
     updateMessageLinks();
     startWatching();

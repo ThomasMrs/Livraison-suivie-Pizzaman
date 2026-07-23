@@ -50,22 +50,11 @@
           Adresse de livraison
           <input name="destination" autocomplete="off" placeholder="Ex: 12 rue des Écoles, Le Boulou" required />
         </label>
-        <label>
-          Durée estimée avant l'arrivée
-          <select name="etaMinutes" required>
-            <option value="5">5 minutes</option>
-            <option value="10" selected>10 minutes</option>
-            <option value="15">15 minutes</option>
-            <option value="20">20 minutes</option>
-            <option value="25">25 minutes</option>
-            <option value="30">30 minutes</option>
-          </select>
-        </label>
 
         <p class="delivery-hint">
           <i data-lucide="info" aria-hidden="true"></i>
-          Ton téléphone va demander l'autorisation de partager ta position. Accepte pour
-          que le client puisse te suivre.
+          Pas de durée à saisir : le temps d'arrivée est calculé automatiquement à
+          partir de l'adresse et de ta position GPS. Accepte le partage de position.
         </p>
 
         <button class="primary-action full-width" id="start-button" type="submit">
@@ -104,7 +93,7 @@
 
         <details class="message-details">
           <summary>Voir / modifier le message</summary>
-          <textarea id="client-message" rows="6" readonly></textarea>
+          <textarea id="client-message" rows="6" readonly aria-label="Message envoyé au client"></textarea>
         </details>
 
         <a class="delivery-preview-link" id="preview-link" href="#" target="_blank" rel="noreferrer">

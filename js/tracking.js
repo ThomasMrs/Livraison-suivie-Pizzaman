@@ -57,6 +57,8 @@
         status: "en_route",
         driver_lat: payload.lat ?? null,
         driver_lng: payload.lng ?? null,
+        dest_lat: payload.destLat ?? null,
+        dest_lng: payload.destLng ?? null,
         started_at: now,
         updated_at: now,
       })
@@ -121,6 +123,51 @@
     return digits;
   }
 
+  // Distance à vol d'oiseau entre deux points (mètres).
+  function haversineMeters(a, b) {
+    const R = 6371000;
+    const toRad = (d) => (d * Math.PI) / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const x = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+
+  // Transforme une adresse en coordonnées via Nominatim (OpenStreetMap, gratuit,
+  // sans clé). Renvoie { lat, lng } ou null si introuvable.
+  async function geocodeAddress(address) {
+    const query = String(address || "").trim();
+    if (!query) return null;
+    const url =
+      "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=fr&q=" +
+      encodeURIComponent(query);
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("Geocode " + res.status);
+    const data = await res.json();
+    if (!Array.isArray(data) || !data.length) return null;
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  }
+
+  // Itinéraire routier via OSRM (gratuit, sans clé). Renvoie durée (s),
+  // distance (m) et le tracé [ [lat,lng], ... ]. Lève si indisponible.
+  async function fetchRoute(from, to) {
+    const url =
+      "https://router.project-osrm.org/route/v1/driving/" +
+      `${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("OSRM " + res.status);
+    const data = await res.json();
+    if (!data.routes || !data.routes.length) throw new Error("Aucun itinéraire");
+    const route = data.routes[0];
+    return {
+      durationSec: route.duration,
+      distanceM: route.distance,
+      coords: route.geometry.coordinates.map((c) => [c[1], c[0]]),
+    };
+  }
+
   window.PizzaTracking = {
     PIZZERIA,
     trackingUrl,
@@ -131,5 +178,8 @@
     getDelivery,
     subscribe,
     normalizePhone,
+    haversineMeters,
+    geocodeAddress,
+    fetchRoute,
   };
 })();

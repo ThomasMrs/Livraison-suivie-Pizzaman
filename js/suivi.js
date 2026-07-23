@@ -26,7 +26,9 @@
     map: null,
     driverMarker: null,
     destMarker: null,
+    destSource: null,
     pizzaMarker: null,
+    routeCasing: null,
     routeLine: null,
     driverPos: null,
     clientPos: null,
@@ -61,9 +63,10 @@
   function initMap() {
     const pizzeria = PizzaTracking.PIZZERIA;
     state.map = window.L.map(mapEl, { zoomControl: true }).setView([pizzeria.lat, pizzeria.lng], 14);
-    window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap",
+    window.L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      subdomains: "abcd",
+      maxZoom: 20,
+      attribution: "&copy; OpenStreetMap &copy; CARTO",
     }).addTo(state.map);
 
     state.pizzaMarker = window.L.marker([pizzeria.lat, pizzeria.lng], {
@@ -89,28 +92,43 @@
     }
   }
 
-  function setDestMarker(pos) {
+  function setDestMarker(pos, source) {
     const latlng = [pos.lat, pos.lng];
-    if (!state.destMarker) {
+    const emoji = source === "client" ? "📍" : "🏠";
+    const label = source === "client" ? "Vous êtes ici" : "Adresse de livraison";
+    if (!state.destMarker || state.destSource !== source) {
+      if (state.destMarker) state.map.removeLayer(state.destMarker);
       state.destMarker = window.L.marker(latlng, {
-        icon: emojiIcon("📍", "is-dest"),
-        title: "Vous êtes ici",
+        icon: emojiIcon(emoji, "is-dest"),
+        title: label,
       }).addTo(state.map);
-      state.destMarker.bindPopup("Vous êtes ici");
+      state.destMarker.bindPopup(label);
+      state.destSource = source;
     } else {
       state.destMarker.setLatLng(latlng);
     }
   }
 
+  // Trait d'itinéraire avec liseré blanc dessous pour le rendre bien lisible.
   function drawRoute(coords) {
     if (!coords || coords.length < 2) return;
-    if (!state.routeLine) {
+    if (!state.routeCasing) {
+      state.routeCasing = window.L.polyline(coords, {
+        color: "#ffffff",
+        weight: 9,
+        opacity: 0.9,
+        lineCap: "round",
+        lineJoin: "round",
+      }).addTo(state.map);
       state.routeLine = window.L.polyline(coords, {
-        color: "#b8322b",
+        color: "#0e5b3f",
         weight: 5,
-        opacity: 0.85,
+        opacity: 0.95,
+        lineCap: "round",
+        lineJoin: "round",
       }).addTo(state.map);
     } else {
+      state.routeCasing.setLatLngs(coords);
       state.routeLine.setLatLngs(coords);
     }
   }
@@ -118,8 +136,10 @@
   function fitToPoints() {
     const points = [];
     if (state.driverPos) points.push([state.driverPos.lat, state.driverPos.lng]);
-    if (state.clientPos) points.push([state.clientPos.lat, state.clientPos.lng]);
-    if (!state.clientPos) {
+    const dest = getDestPos();
+    if (dest) {
+      points.push([dest.pos.lat, dest.pos.lng]);
+    } else {
       const pizzeria = PizzaTracking.PIZZERIA;
       points.push([pizzeria.lat, pizzeria.lng]);
     }
@@ -130,6 +150,17 @@
       state.map.fitBounds(window.L.latLngBounds(points), { padding: [55, 55], maxZoom: 16 });
     }
     state.hasFitBounds = true;
+  }
+
+  // Destination pour l'estimation : la position du client si partagée,
+  // sinon l'adresse de livraison géocodée par le livreur.
+  function getDestPos() {
+    if (state.clientPos) return { pos: state.clientPos, source: "client" };
+    const d = state.delivery;
+    if (d && d.dest_lat != null && d.dest_lng != null) {
+      return { pos: { lat: d.dest_lat, lng: d.dest_lng }, source: "address" };
+    }
+    return null;
   }
 
   // ---------------- Distances / itinéraire ----------------
@@ -188,7 +219,7 @@
   }
 
   function formatRemaining(durationSec) {
-    if (durationSec <= 45) return "Arrivée imminente";
+    if (durationSec <= 45) return "Arrivée !";
     const minutes = Math.max(1, Math.round(durationSec / 60));
     return `${minutes} min`;
   }
@@ -197,7 +228,8 @@
 
   async function recomputeEta(force) {
     if (!state.delivery || state.delivery.status !== "en_route") return;
-    if (!state.driverPos || !state.clientPos) {
+    const dest = getDestPos();
+    if (!state.driverPos || !dest) {
       renderFallbackEta();
       return;
     }
@@ -208,9 +240,9 @@
     state.computingRoute = true;
     let route = null;
     try {
-      route = await fetchRoute(state.driverPos, state.clientPos);
+      route = await fetchRoute(state.driverPos, dest.pos);
     } catch (error) {
-      route = estimateStraightLine(state.driverPos, state.clientPos);
+      route = estimateStraightLine(state.driverPos, dest.pos);
     }
     state.computingRoute = false;
     state.lastRouteAt = Date.now();
@@ -222,7 +254,10 @@
     etaDistanceBlock.hidden = false;
     etaDistance.textContent = formatDistance(route.distanceM);
     etaSource.hidden = false;
-    etaSource.textContent = "Estimation en direct selon votre position 📍";
+    etaSource.textContent =
+      dest.source === "client"
+        ? "Estimation en direct selon votre position 📍"
+        : "Estimation en direct vers l'adresse de livraison 🏠";
 
     drawRoute(route.coords);
   }
@@ -239,10 +274,10 @@
     const remainingMs = arrival - Date.now();
     etaWrap.hidden = false;
     etaClock.textContent = formatClock(new Date(arrival));
-    etaRemaining.textContent = remainingMs <= 30000 ? "Arrivée imminente" : `${Math.round(remainingMs / 60000)} min`;
+    etaRemaining.textContent = remainingMs <= 30000 ? "Arrivée !" : `${Math.round(remainingMs / 60000)} min`;
     etaDistanceBlock.hidden = true;
     etaSource.hidden = false;
-    etaSource.textContent = "Estimation indicative du livreur — activez votre position pour l'affiner.";
+    etaSource.textContent = "Estimation indicative — activez votre position pour l'affiner.";
   }
 
   // ---------------- Rendu statut ----------------
@@ -303,11 +338,11 @@
   function render() {
     renderStatus();
     renderMapsLink();
-    if (state.driverPos) {
-      setDriverMarker(state.driverPos);
-      if (!state.hasFitBounds) fitToPoints();
-    }
-    if (state.clientPos && state.driverPos) {
+    if (state.driverPos) setDriverMarker(state.driverPos);
+    const dest = getDestPos();
+    if (dest) setDestMarker(dest.pos, dest.source);
+    if (state.driverPos && !state.hasFitBounds) fitToPoints();
+    if (state.driverPos && dest) {
       recomputeEta(false);
     } else {
       renderFallbackEta();
@@ -332,18 +367,23 @@
     const firstFix = !state.clientPos;
     const moved = firstFix || haversineMeters(state.clientPos, pos) > 25;
     state.clientPos = pos;
-    setDestMarker(pos);
+    setDestMarker(pos, "client");
     geoPrompt.hidden = true;
-    // Au premier point du client, on recadre pour voir livreur + client.
-    if (firstFix || !state.hasFitBounds) fitToPoints();
+    // Quand le client partage sa position, on recadre pour voir livreur + client.
+    if (firstFix) {
+      state.hasFitBounds = false;
+      fitToPoints();
+    }
     if (moved) recomputeEta(true);
   }
 
   function onClientPositionError(error) {
+    // Position refusée : on garde l'estimation basée sur l'adresse de livraison,
+    // et on propose d'activer la position pour l'affiner.
     if (error && error.code === error.PERMISSION_DENIED) {
       geoPrompt.hidden = false;
     }
-    renderFallbackEta();
+    recomputeEta(true);
   }
 
   function startClientGeo() {
@@ -435,7 +475,7 @@
       state.pollTimer = window.setInterval(poll, POLL_INTERVAL_MS);
       state.tickTimer = window.setInterval(() => {
         renderStatus();
-        if (state.clientPos && state.driverPos) recomputeEta(false);
+        if (state.driverPos && getDestPos()) recomputeEta(false);
         else renderFallbackEta();
       }, TICK_INTERVAL_MS);
     }

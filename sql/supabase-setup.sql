@@ -18,9 +18,15 @@ create table if not exists public.deliveries (
   status       text not null default 'en_route',  -- en_route | arrived | cancelled
   driver_lat   double precision,
   driver_lng   double precision,
+  dest_lat     double precision,
+  dest_lng     double precision,
   started_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
+
+-- Ajoute les colonnes de destination si la table existe déjà (ré-exécution).
+alter table public.deliveries add column if not exists dest_lat double precision;
+alter table public.deliveries add column if not exists dest_lng double precision;
 
 -- 2) Sécurité (Row Level Security) ---------------------------
 -- Le site n'a pas de système de connexion : la pizzeria est petite

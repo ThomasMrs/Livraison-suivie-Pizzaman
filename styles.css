@@ -542,7 +542,7 @@ textarea:focus {
   text-align: center;
 }
 
-/* Marqueurs emoji sur la carte Leaflet */
+/* Marqueurs emoji sur la carte Leaflet (badges ronds bien lisibles) */
 .map-emoji {
   display: grid;
   place-items: center;
@@ -551,13 +551,35 @@ textarea:focus {
 }
 
 .map-emoji span {
-  font-size: 30px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  font-size: 20px;
   line-height: 1;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
 }
 
 .map-emoji.is-driver span {
-  font-size: 34px;
+  width: 46px;
+  height: 46px;
+  font-size: 25px;
+  border: 3px solid var(--green);
+  animation: marker-pulse 1.8s ease-out infinite;
+}
+
+@keyframes marker-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(14, 91, 63, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(14, 91, 63, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(14, 91, 63, 0);
+  }
 }
 
 /* ---------------- Page d'accueil ---------------- */
@@ -636,9 +658,57 @@ textarea:focus {
   justify-self: start;
 }
 
+/* ---------------- Anti-débordement (surtout mobile) ---------------- */
+
+.brand {
+  min-width: 0;
+}
+
+.brand span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eta-block {
+  min-width: 0;
+}
+
+.eta-block strong {
+  font-size: clamp(1.05rem, 4.6vw, 1.3rem);
+  overflow-wrap: anywhere;
+}
+
+.tracking-note,
+.eta-source,
+.delivery-status-line,
+.delivery-hint,
+.geo-prompt p,
+.section-note,
+.landing-card p,
+.landing-hero p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.message-details textarea {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 480px) {
   .delivery-actions,
+  .delivery-actions-secondary,
   .delivery-end-actions {
     grid-template-columns: 1fr;
+  }
+
+  .brand img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .top-nav a {
+    padding: 8px 10px;
   }
 }
