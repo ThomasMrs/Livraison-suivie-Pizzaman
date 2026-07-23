@@ -368,10 +368,65 @@ textarea:focus {
 }
 
 .delivery-live.is-finished .delivery-actions,
+.delivery-live.is-finished .delivery-actions-secondary,
 .delivery-live.is-finished .delivery-end-actions,
+.delivery-live.is-finished .send-client-btn,
+.delivery-live.is-finished .message-details,
+.delivery-live.is-finished .driver-map,
 .delivery-live.is-finished label,
 .delivery-live.is-finished .delivery-preview-link {
   display: none;
+}
+
+/* Carte de suivi côté livreur */
+.driver-map {
+  height: clamp(240px, 40vh, 420px);
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e9e4da;
+  z-index: 0;
+}
+
+/* Bouton principal « Prévenir le client » (un clic) */
+.send-client-btn {
+  min-height: 54px;
+  font-size: 1.05rem;
+}
+
+.delivery-actions-secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.message-details {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.message-details summary {
+  padding: 12px 14px;
+  color: var(--green-dark);
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.message-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.message-details[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.message-details textarea {
+  border: 0;
+  border-radius: 0 0 10px 10px;
 }
 
 /* ---------------- Page de suivi client ---------------- */
@@ -516,6 +571,17 @@ textarea:focus {
   background:
     linear-gradient(120deg, rgba(10, 57, 41, 0.94), rgba(135, 35, 31, 0.7));
   box-shadow: var(--shadow);
+}
+
+.hero-logo {
+  width: 96px;
+  height: 96px;
+  margin-bottom: 6px;
+  padding: 10px;
+  border-radius: 20px;
+  object-fit: contain;
+  background: var(--cream);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
 }
 
 .landing-hero .kicker {

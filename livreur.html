@@ -6,13 +6,19 @@
     <title>Pizza'Man - Espace livreur</title>
     <meta name="description" content="Espace livreur Pizza'Man : partage ta position et préviens le client de ton départ." />
     <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#0e5b3f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pizza'Man" />
     <link rel="icon" href="assets/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="index.html" aria-label="Accueil">
-        <img src="assets/pizzaman-logo-clean.png" alt="" />
+        <img src="assets/pizzaman-logo-clean.png" alt="Pizza'Man" />
         <span>Pizza'Man · Livraison</span>
       </a>
       <nav class="top-nav" aria-label="Navigation principale">
@@ -25,8 +31,8 @@
         <p class="kicker">Espace livreur</p>
         <h1>Départ en livraison</h1>
         <p class="section-note">
-          Renseigne le client, sa distance en minutes, puis démarre la course.
-          Le client reçoit un lien pour suivre ta position sur une carte en direct.
+          Renseigne le client et l'adresse, puis démarre la course. Tu suis ta
+          position sur la carte et tu préviens le client en un clic.
         </p>
       </section>
 
@@ -38,11 +44,11 @@
         </label>
         <label>
           Téléphone du client (pour le SMS)
-          <input name="clientPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Ex: 06 12 34 56 78" />
+          <input name="clientPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Ex: 06 12 34 56 78" required />
         </label>
         <label>
-          Adresse / précision (facultatif)
-          <input name="destination" autocomplete="off" placeholder="Ex: Le Boulou, rue des Écoles" />
+          Adresse de livraison
+          <input name="destination" autocomplete="off" placeholder="Ex: 12 rue des Écoles, Le Boulou" required />
         </label>
         <label>
           Durée estimée avant l'arrivée
@@ -78,16 +84,14 @@
 
         <p class="delivery-status-line" id="position-status">Recherche de ta position…</p>
 
-        <label>
-          Message à envoyer au client
-          <textarea id="client-message" rows="6" readonly></textarea>
-        </label>
+        <div class="driver-map" id="driver-map" role="img" aria-label="Ta position en direct"></div>
 
-        <div class="delivery-actions">
-          <a class="primary-action" id="send-sms" href="#">
-            <i data-lucide="message-square" aria-hidden="true"></i>
-            Envoyer par SMS
-          </a>
+        <a class="primary-action full-width send-client-btn" id="send-sms" href="#">
+          <i data-lucide="message-square" aria-hidden="true"></i>
+          Prévenir le client (SMS)
+        </a>
+
+        <div class="delivery-actions-secondary">
           <a class="secondary-action" id="send-whatsapp" href="#" target="_blank" rel="noreferrer">
             <i data-lucide="send" aria-hidden="true"></i>
             WhatsApp
@@ -98,9 +102,14 @@
           </button>
         </div>
 
+        <details class="message-details">
+          <summary>Voir / modifier le message</summary>
+          <textarea id="client-message" rows="6" readonly></textarea>
+        </details>
+
         <a class="delivery-preview-link" id="preview-link" href="#" target="_blank" rel="noreferrer">
-          <i data-lucide="map" aria-hidden="true"></i>
-          Voir la carte comme le client
+          <i data-lucide="external-link" aria-hidden="true"></i>
+          Ouvrir la page de suivi du client
         </a>
 
         <div class="delivery-end-actions">
@@ -117,6 +126,7 @@
     </main>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/tracking.js"></script>
     <script src="js/livreur.js"></script>

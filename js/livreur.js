@@ -15,6 +15,7 @@
   const previewLink = document.querySelector("#preview-link");
   const arrivedButton = document.querySelector("#arrived-button");
   const cancelButton = document.querySelector("#cancel-button");
+  const driverMapEl = document.querySelector("#driver-map");
 
   const state = {
     deliveryId: null,
@@ -22,10 +23,56 @@
     watchId: null,
     lastPushAt: 0,
     lastCoords: null,
+    map: null,
+    driverMarker: null,
   };
 
   function refreshIcons() {
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  // ---------------- Carte du livreur ----------------
+
+  function emojiIcon(emoji, className) {
+    return window.L.divIcon({
+      className: "map-emoji " + (className || ""),
+      html: `<span>${emoji}</span>`,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+    });
+  }
+
+  function initDriverMap(lat, lng) {
+    if (state.map || !window.L || !driverMapEl) return;
+    const p = PizzaTracking.PIZZERIA;
+    const center = lat != null && lng != null ? [lat, lng] : [p.lat, p.lng];
+    state.map = window.L.map(driverMapEl, { zoomControl: true }).setView(center, 15);
+    window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(state.map);
+    window.L.marker([p.lat, p.lng], { icon: emojiIcon("🍕", "is-pizzeria") })
+      .addTo(state.map)
+      .bindPopup(p.name);
+    window.setTimeout(() => {
+      if (state.map) state.map.invalidateSize();
+    }, 200);
+  }
+
+  function updateDriverMarker(lat, lng) {
+    if (!state.map || lat == null || lng == null) return;
+    const latlng = [lat, lng];
+    if (!state.driverMarker) {
+      state.driverMarker = window.L.marker(latlng, {
+        icon: emojiIcon("🛵", "is-driver"),
+        zIndexOffset: 1000,
+      })
+        .addTo(state.map)
+        .bindPopup("Toi");
+    } else {
+      state.driverMarker.setLatLng(latlng);
+    }
+    state.map.panTo(latlng, { animate: true });
   }
 
   function setFeedback(message, isError) {
@@ -102,6 +149,7 @@
       (position) => {
         const { latitude, longitude } = position.coords;
         pushPosition(latitude, longitude, false);
+        updateDriverMarker(latitude, longitude);
         updateMessageLinks();
       },
       (error) => {
@@ -219,6 +267,8 @@
     persist();
     setFeedback("");
     showLivePanel();
+    initDriverMap(coords.lat, coords.lng);
+    updateDriverMarker(coords.lat, coords.lng);
     setPositionStatus("Position partagée ✅");
     updateMessageLinks();
     startWatching();
@@ -254,6 +304,9 @@
     }
 
     showLivePanel();
+    const c = state.lastCoords;
+    initDriverMap(c ? c.lat : null, c ? c.lng : null);
+    if (c) updateDriverMarker(c.lat, c.lng);
     setPositionStatus("Reprise de la livraison en cours…");
     updateMessageLinks();
     startWatching();

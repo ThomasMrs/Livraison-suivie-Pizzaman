@@ -23,11 +23,12 @@ seule (façon Uber Eats). Aucune application à installer.
 ## Comment ça marche
 
 1. **Le livreur** ouvre `livreur.html`, renseigne le nom du client, son téléphone
-   et la durée estimée, puis appuie sur « Je pars ». Le téléphone demande
-   l'autorisation de partager la position ; il faut l'accepter.
-2. Le site crée la livraison dans la base et génère un **message prêt à envoyer**
-   (SMS ou WhatsApp) contenant la durée estimée, un **lien de suivi en direct** et
-   un lien Google Maps.
+   et l'**adresse de livraison (obligatoire)**, puis appuie sur « Je pars ». Le
+   téléphone demande l'autorisation de partager la position ; il faut l'accepter.
+2. Le livreur suit alors sa propre position sur une **carte intégrée** et prévient
+   le client **en un clic** via le bouton « Prévenir le client (SMS) » (WhatsApp
+   et copie du lien restent disponibles). Le message contient la durée estimée, un
+   **lien de suivi en direct** et un lien Google Maps.
 3. **Le client** ouvre le lien reçu (`suivi.html?id=...`) et voit le livreur se
    déplacer sur la carte. S'il active sa position, l'heure d'arrivée est recalculée
    en continu selon l'itinéraire routier réel livreur → client.
@@ -66,6 +67,13 @@ Si le routage échoue, une estimation « à vol d'oiseau » prend le relais. Si 
 client refuse la géolocalisation, l'estimation retombe sur la durée fixe saisie
 par le livreur. La position du client n'est **pas enregistrée** : le calcul reste
 dans son navigateur.
+
+## Ajouter à l'écran d'accueil (icône du raccourci)
+
+Le site est installable : sur mobile, « Ajouter à l'écran d'accueil » crée un
+raccourci avec le logo Pizza'Man et l'ouvre en plein écran (sans barre du
+navigateur). C'est géré par `manifest.json` et les icônes de `assets/`
+(`icon-192.png`, `icon-512.png`, `apple-touch-icon.png`).
 
 ## Publier sur GitHub Pages
 

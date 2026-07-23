@@ -1,0 +1,25 @@
+{
+  "name": "Pizza'Man Livraison",
+  "short_name": "Pizza'Man",
+  "description": "Suivi de livraison en temps réel Pizza'Man",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff8ee",
+  "theme_color": "#0e5b3f",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
