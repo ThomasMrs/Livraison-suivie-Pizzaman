@@ -82,6 +82,17 @@ raccourci avec le logo Pizza'Man et l'ouvre en plein écran (sans barre du
 navigateur). C'est géré par `manifest.json` et les icônes de `assets/`
 (`icon-192.png`, `icon-512.png`, `apple-touch-icon.png`).
 
+## Mise à jour automatique (plus besoin de vider le cache)
+
+Un service worker (`sw.js`) fonctionne en mode **« réseau d'abord »** : à chaque
+visite, il récupère la version fraîche des fichiers sur le réseau (le cache ne
+sert qu'au mode hors-ligne). Le site est donc toujours à jour sans vider le cache.
+
+Après un déploiement, incrémente la constante `VERSION` en haut de `sw.js`
+(ex. `2026-07-23-1` -> `2026-07-23-2`) : les anciens caches sont alors purgés et,
+si l'appli est ouverte, elle se recharge une fois pour appliquer la nouvelle
+version.
+
 ## Publier sur GitHub Pages
 
 `Settings` -> `Pages`, puis sélectionner la branche `main` et le dossier racine.
