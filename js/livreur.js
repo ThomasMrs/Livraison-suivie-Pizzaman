@@ -10,8 +10,6 @@
   const positionStatus = document.querySelector("#position-status");
   const messageBox = document.querySelector("#client-message");
   const sendSms = document.querySelector("#send-sms");
-  const sendWhatsapp = document.querySelector("#send-whatsapp");
-  const copyLink = document.querySelector("#copy-link");
   const previewLink = document.querySelector("#preview-link");
   const routeLink = document.querySelector("#route-link");
   const arrivedButton = document.querySelector("#arrived-button");
@@ -197,10 +195,6 @@
     const separator = isAppleMobile() ? "&" : "?";
     const smsTarget = state.phone ? "+" + state.phone : "";
     sendSms.href = `sms:${smsTarget}${separator}body=${encoded}`;
-
-    sendWhatsapp.href = state.phone
-      ? `https://wa.me/${state.phone}?text=${encoded}`
-      : `https://wa.me/?text=${encoded}`;
 
     previewLink.href = url;
     updateRouteLink();
@@ -479,24 +473,9 @@
     }, 2500);
   }
 
-  function copyTrackingLink() {
-    if (!state.deliveryId) return;
-    const url = PizzaTracking.trackingUrl(state.deliveryId);
-    const done = () => {
-      setFeedback("Lien de suivi copié ✅");
-      window.setTimeout(() => setFeedback(""), 1800);
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(done).catch(() => window.prompt("Copie ce lien :", url));
-    } else {
-      window.prompt("Copie ce lien :", url);
-    }
-  }
-
   form.addEventListener("submit", startDelivery);
   arrivedButton.addEventListener("click", () => finishDelivery("arrived"));
   cancelButton.addEventListener("click", () => finishDelivery("cancelled", "Annuler cette livraison ?"));
-  copyLink.addEventListener("click", copyTrackingLink);
 
   refreshIcons();
   resumeIfActive();
