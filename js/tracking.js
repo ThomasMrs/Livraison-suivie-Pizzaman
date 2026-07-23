@@ -43,6 +43,15 @@
     return `https://www.google.com/maps?q=${lat},${lng}`;
   }
 
+  // Lien d'itinéraire Google Maps (navigation) vers une destination.
+  // `destination` peut être "lat,lng" ou une adresse texte.
+  function googleMapsDirectionsUrl(destination) {
+    return (
+      "https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=" +
+      encodeURIComponent(destination)
+    );
+  }
+
   // Crée une nouvelle livraison et renvoie la ligne créée (avec son id).
   async function createDelivery(payload) {
     const sb = getClient();
@@ -172,6 +181,7 @@
     PIZZERIA,
     trackingUrl,
     googleMapsUrl,
+    googleMapsDirectionsUrl,
     createDelivery,
     updatePosition,
     setStatus,

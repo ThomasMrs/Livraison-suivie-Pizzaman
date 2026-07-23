@@ -371,6 +371,7 @@ textarea:focus {
 .delivery-live.is-finished .delivery-actions-secondary,
 .delivery-live.is-finished .delivery-end-actions,
 .delivery-live.is-finished .send-client-btn,
+.delivery-live.is-finished .route-to-client,
 .delivery-live.is-finished .message-details,
 .delivery-live.is-finished .driver-map,
 .delivery-live.is-finished label,
@@ -689,7 +690,6 @@ textarea:focus {
 .landing-card p,
 .landing-hero p {
   overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
 .message-details textarea {

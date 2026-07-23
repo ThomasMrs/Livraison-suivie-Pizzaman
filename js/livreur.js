@@ -13,6 +13,7 @@
   const sendWhatsapp = document.querySelector("#send-whatsapp");
   const copyLink = document.querySelector("#copy-link");
   const previewLink = document.querySelector("#preview-link");
+  const routeLink = document.querySelector("#route-link");
   const arrivedButton = document.querySelector("#arrived-button");
   const cancelButton = document.querySelector("#cancel-button");
   const driverMapEl = document.querySelector("#driver-map");
@@ -202,6 +203,21 @@
       : `https://wa.me/?text=${encoded}`;
 
     previewLink.href = url;
+    updateRouteLink();
+  }
+
+  // Lien d'itinéraire Google Maps du livreur vers l'adresse du client.
+  function updateRouteLink() {
+    if (!routeLink) return;
+    const dest = state.destCoords
+      ? `${state.destCoords.lat},${state.destCoords.lng}`
+      : (state.address || "").trim();
+    if (!dest) {
+      routeLink.hidden = true;
+      return;
+    }
+    routeLink.hidden = false;
+    routeLink.href = PizzaTracking.googleMapsDirectionsUrl(dest);
   }
 
   function pushPosition(lat, lng, force) {
@@ -283,6 +299,7 @@
           deliveryId: state.deliveryId,
           clientName: state.clientName,
           phone: state.phone,
+          address: state.address,
           etaMinutes: state.etaMinutes,
           destCoords: state.destCoords,
         }),
@@ -311,6 +328,7 @@
     state.phone = PizzaTracking.normalizePhone(data.get("clientPhone"));
     state.etaMinutes = null;
     const destination = String(data.get("destination") || "").trim();
+    state.address = destination;
 
     startButton.disabled = true;
     setFeedback("Récupération de ta position GPS…");
@@ -411,6 +429,7 @@
     state.deliveryId = delivery.id;
     state.clientName = saved.clientName || delivery.client_name || "";
     state.phone = saved.phone || "";
+    state.address = delivery.destination || saved.address || "";
     state.etaMinutes = saved.etaMinutes || delivery.eta_minutes || null;
     if (delivery.driver_lat != null && delivery.driver_lng != null) {
       state.lastCoords = { lat: delivery.driver_lat, lng: delivery.driver_lng };

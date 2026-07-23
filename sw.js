@@ -8,7 +8,7 @@
    ============================================================= */
 
 // Change ce numéro à chaque déploiement pour purger l'ancien cache.
-const VERSION = "2026-07-23-1";
+const VERSION = "2026-07-23-2";
 const CACHE = "pm-livraison-" + VERSION;
 
 // Installe immédiatement la nouvelle version (ne pas attendre).
