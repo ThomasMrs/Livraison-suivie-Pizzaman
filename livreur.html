@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pizza'Man - Espace livreur</title>
+    <meta name="description" content="Espace livreur Pizza'Man : partage ta position et préviens le client de ton départ." />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="assets/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Accueil">
+        <img src="assets/pizzaman-logo-clean.png" alt="" />
+        <span>Pizza'Man · Livraison</span>
+      </a>
+      <nav class="top-nav" aria-label="Navigation principale">
+        <a href="index.html">Accueil</a>
+      </nav>
+    </header>
+
+    <main class="delivery-page">
+      <section class="section-heading">
+        <p class="kicker">Espace livreur</p>
+        <h1>Départ en livraison</h1>
+        <p class="section-note">
+          Renseigne le client, sa distance en minutes, puis démarre la course.
+          Le client reçoit un lien pour suivre ta position sur une carte en direct.
+        </p>
+      </section>
+
+      <!-- Formulaire de départ -->
+      <form class="delivery-card" id="delivery-form">
+        <label>
+          Nom du client
+          <input name="clientName" autocomplete="off" placeholder="Ex: Thomas" required />
+        </label>
+        <label>
+          Téléphone du client (pour le SMS)
+          <input name="clientPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Ex: 06 12 34 56 78" />
+        </label>
+        <label>
+          Adresse / précision (facultatif)
+          <input name="destination" autocomplete="off" placeholder="Ex: Le Boulou, rue des Écoles" />
+        </label>
+        <label>
+          Durée estimée avant l'arrivée
+          <select name="etaMinutes" required>
+            <option value="5">5 minutes</option>
+            <option value="10" selected>10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="20">20 minutes</option>
+            <option value="25">25 minutes</option>
+            <option value="30">30 minutes</option>
+          </select>
+        </label>
+
+        <p class="delivery-hint">
+          <i data-lucide="info" aria-hidden="true"></i>
+          Ton téléphone va demander l'autorisation de partager ta position. Accepte pour
+          que le client puisse te suivre.
+        </p>
+
+        <button class="primary-action full-width" id="start-button" type="submit">
+          <i data-lucide="navigation" aria-hidden="true"></i>
+          Je pars — partager ma position
+        </button>
+        <p class="form-note" id="driver-feedback" role="status" aria-live="polite"></p>
+      </form>
+
+      <!-- Panneau course en cours (caché au départ) -->
+      <section class="delivery-card delivery-live" id="live-panel" hidden aria-live="polite">
+        <div class="delivery-live-head">
+          <span class="live-dot" aria-hidden="true"></span>
+          <h2 id="live-title">Livraison en cours</h2>
+        </div>
+
+        <p class="delivery-status-line" id="position-status">Recherche de ta position…</p>
+
+        <label>
+          Message à envoyer au client
+          <textarea id="client-message" rows="6" readonly></textarea>
+        </label>
+
+        <div class="delivery-actions">
+          <a class="primary-action" id="send-sms" href="#">
+            <i data-lucide="message-square" aria-hidden="true"></i>
+            Envoyer par SMS
+          </a>
+          <a class="secondary-action" id="send-whatsapp" href="#" target="_blank" rel="noreferrer">
+            <i data-lucide="send" aria-hidden="true"></i>
+            WhatsApp
+          </a>
+          <button class="secondary-action" id="copy-link" type="button">
+            <i data-lucide="link" aria-hidden="true"></i>
+            Copier le lien
+          </button>
+        </div>
+
+        <a class="delivery-preview-link" id="preview-link" href="#" target="_blank" rel="noreferrer">
+          <i data-lucide="map" aria-hidden="true"></i>
+          Voir la carte comme le client
+        </a>
+
+        <div class="delivery-end-actions">
+          <button class="primary-action" id="arrived-button" type="button">
+            <i data-lucide="check" aria-hidden="true"></i>
+            Je suis arrivé
+          </button>
+          <button class="secondary-action" id="cancel-button" type="button">
+            <i data-lucide="x" aria-hidden="true"></i>
+            Annuler la course
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/tracking.js"></script>
+    <script src="js/livreur.js"></script>
+  </body>
+</html>

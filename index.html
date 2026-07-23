@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pizza'Man - Suivi de livraison</title>
+    <meta name="description" content="Suivi de livraison en temps réel Pizza'Man : espace livreur et suivi client sur carte." />
+    <link rel="icon" href="assets/favicon.png" type="image/png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Accueil">
+        <img src="assets/pizzaman-logo-clean.png" alt="" />
+        <span>Pizza'Man · Livraison</span>
+      </a>
+    </header>
+
+    <main class="landing">
+      <section class="landing-hero">
+        <p class="kicker">Suivi de livraison</p>
+        <h1>Suivez votre pizza en temps réel</h1>
+        <p>
+          Le livreur partage sa position, le client suit sa progression sur une
+          carte avec une estimation d'arrivée qui se met à jour toute seule.
+        </p>
+      </section>
+
+      <div class="landing-cards">
+        <article class="landing-card">
+          <h2>
+            <i data-lucide="truck" aria-hidden="true"></i>
+            Espace livreur
+          </h2>
+          <p>
+            Tu pars en livraison ? Renseigne le client et démarre le partage de
+            position. Un message prêt à envoyer est généré pour prévenir le client.
+          </p>
+          <a class="primary-action" href="livreur.html">
+            <i data-lucide="navigation" aria-hidden="true"></i>
+            Ouvrir l'espace livreur
+          </a>
+        </article>
+
+        <article class="landing-card">
+          <h2>
+            <i data-lucide="map-pin" aria-hidden="true"></i>
+            Suivi client
+          </h2>
+          <p>
+            Vous êtes client ? Vous recevez votre lien de suivi personnel par SMS
+            au départ du livreur. Ouvrez-le pour suivre la livraison en direct.
+          </p>
+        </article>
+      </div>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+      if (window.lucide) window.lucide.createIcons();
+    </script>
+  </body>
+</html>
